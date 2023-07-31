@@ -72,5 +72,43 @@ let statusBar = NSStatusBar.system
 let statusItem = statusBar.statusItem(withLength: NSStatusItem.variableLength)
 statusItem.button?.title = "DeepMiddle"
 
+// Create menu for status bar button
+let menu = NSMenu()
+statusItem.menu = menu
+
+// Get list of user-installed apps and add them to the menu
+let fileManager = FileManager.default
+let applicationsDirectoryURLs = fileManager.urls(for: .applicationDirectory, in: .localDomainMask)
+for directoryURL in applicationsDirectoryURLs {
+    do {
+        let applicationURLs = try fileManager.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil)
+        for applicationURL in applicationURLs {
+            let appName = applicationURL.lastPathComponent.replacingOccurrences(of: ".app", with: "")
+            let menuItem = NSMenuItem(title: appName, action: #selector(AppDelegate.toggleApp(_:)), keyEquivalent: "")
+            menuItem.target = NSApp.delegate
+            menuItem.state = requiredProcNames.contains(appName) ? .on : .off
+            menu.addItem(menuItem)
+        }
+    } catch {
+        print(error.localizedDescription)
+    }
+}
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    @objc func toggleApp(_ sender: NSMenuItem) {
+        let appName = sender.title
+        if requiredProcNames.contains(appName) {
+            requiredProcNames.remove(appName)
+            sender.state = .off
+        } else {
+            requiredProcNames.insert(appName)
+            sender.state = .on
+        }
+    }
+}
+
+let delegate = AppDelegate()
+app.delegate = delegate
+
 print("Start handling deep clicks in selected apps")
-CFRunLoopRun()
+app.run()
