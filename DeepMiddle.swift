@@ -5,7 +5,7 @@ let app = NSApplication.shared
 app.setActivationPolicy(.regular)
 
 let requiredEvent = CGEventType(rawValue: 29)!
-var requiredProcNames: Set<String> = ["Google Chrome"]
+var requiredProcNames: Set<String> = []
 
 var needIgnoreNextLeftMouseUp = false
 
@@ -95,6 +95,19 @@ for directoryURL in applicationsDirectoryURLs {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    override init() {
+        super.init()
+
+        // Load list of selected apps from text file in user's cache directory
+        let cacheDirectoryURLs = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+        if let cacheDirectoryURL = cacheDirectoryURLs.first {
+            let selectedAppsFileURL = cacheDirectoryURL.appendingPathComponent("DeepMiddle.txt")
+            if let selectedApps = try? String(contentsOf: selectedAppsFileURL).components(separatedBy: "\n") {
+                requiredProcNames = Set(selectedApps)
+            }
+        }
+    }
+
     @objc func toggleApp(_ sender: NSMenuItem) {
         let appName = sender.title
         if requiredProcNames.contains(appName) {
@@ -103,6 +116,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             requiredProcNames.insert(appName)
             sender.state = .on
+        }
+
+        // Save list of selected apps to text file in user's cache directory
+        let cacheDirectoryURLs = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+        if let cacheDirectoryURL = cacheDirectoryURLs.first {
+            let selectedAppsFileURL = cacheDirectoryURL.appendingPathComponent("DeepMiddle.txt")
+            do {
+                try requiredProcNames.joined(separator: "\n").write(to: selectedAppsFileURL, atomically: true, encoding: .utf8)
+            } catch {
+                print(error.localizedDescription)
+            }
         }
     }
 }
