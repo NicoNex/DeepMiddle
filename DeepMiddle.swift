@@ -74,6 +74,7 @@ statusItem.button?.title = "DeepMiddle"
 
 // Create menu for status bar button
 let menu = NSMenu()
+menu.autoenablesItems = false
 statusItem.menu = menu
 
 // Get list of user-installed apps and add them to the menu
@@ -81,14 +82,16 @@ let fileManager = FileManager.default
 let applicationsDirectoryURLs = fileManager.urls(for: .applicationDirectory, in: .localDomainMask)
 for directoryURL in applicationsDirectoryURLs {
     do {
-        let applicationURLs = try fileManager.contentsOfDirectory(at: directoryURL, includingPropertiesForKeys: nil)
-        for applicationURL in applicationURLs {
-            let appName = applicationURL.lastPathComponent.replacingOccurrences(of: ".app", with: "")
+        let applicationURLs = try fileManager.contentsOfDirectory(atPath: directoryURL.path).filter { !$0.starts(with: ".") }
+
+        for applicationName in applicationURLs {
+            let appName = applicationName.replacingOccurrences(of: ".app", with: "")
             let menuItem = NSMenuItem(title: appName, action: #selector(AppDelegate.toggleApp(_:)), keyEquivalent: "")
             menuItem.target = NSApp.delegate
             menuItem.state = requiredProcNames.contains(appName) ? .on : .off
             menu.addItem(menuItem)
         }
+
     } catch {
         print(error.localizedDescription)
     }
@@ -100,8 +103,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Load list of selected apps from text file in user's cache directory
         let cacheDirectoryURLs = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
+
         if let cacheDirectoryURL = cacheDirectoryURLs.first {
-            let selectedAppsFileURL = cacheDirectoryURL.appendingPathComponent("DeepMiddle.txt")
+            let selectedAppsFileURL = cacheDirectoryURL.appendingPathComponent("selectedApps.txt")
+
             if let selectedApps = try? String(contentsOf: selectedAppsFileURL).components(separatedBy: "\n") {
                 requiredProcNames = Set(selectedApps)
             }
@@ -121,7 +126,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Save list of selected apps to text file in user's cache directory
         let cacheDirectoryURLs = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)
         if let cacheDirectoryURL = cacheDirectoryURLs.first {
-            let selectedAppsFileURL = cacheDirectoryURL.appendingPathComponent("DeepMiddle.txt")
+            let selectedAppsFileURL = cacheDirectoryURL.appendingPathComponent("selectedApps.txt")
             do {
                 try requiredProcNames.joined(separator: "\n").write(to: selectedAppsFileURL, atomically: true, encoding: .utf8)
             } catch {
