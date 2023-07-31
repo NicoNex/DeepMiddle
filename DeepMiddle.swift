@@ -17,7 +17,6 @@ func myCGEventCallback(proxy _: CGEventTapProxy, type: CGEventType, event: CGEve
     }
 
     let nsEvent = NSEvent(cgEvent: event)!
-
     if needIgnoreNextLeftMouseUp, nsEvent.stage != 0 {
         return nil
     }
@@ -40,20 +39,14 @@ func myCGEventCallback(proxy _: CGEventTapProxy, type: CGEventType, event: CGEve
         }
 
         let src = CGEventSource(stateID: .hidSystemState)
-
         let mousePos = event.location
-
         let clickDown = CGEvent(mouseEventSource: src, mouseType: .leftMouseDown, mouseCursorPosition: mousePos, mouseButton: .left)
-
         let clickUp = CGEvent(mouseEventSource: src, mouseType: .leftMouseUp, mouseCursorPosition: mousePos, mouseButton: .left)
 
         clickDown?.flags = [.maskCommand]
         clickUp?.flags = [.maskCommand]
-
         clickDown?.post(tap: .cghidEventTap)
-
         needIgnoreNextLeftMouseUp = true
-
         return Unmanaged.passRetained(clickUp!)
     }
 
@@ -69,11 +62,7 @@ if eventTap == nil {
 }
 
 let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap!, 0)
-
 CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
-
 CGEvent.tapEnable(tap: eventTap!, enable: true)
-
 print("Start handling deep clicks in selected apps")
-
 CFRunLoopRun()
