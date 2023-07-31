@@ -72,24 +72,38 @@ let statusBar = NSStatusBar.system
 let statusItem = statusBar.statusItem(withLength: NSStatusItem.variableLength)
 statusItem.button?.title = "DeepMiddle"
 
-// Create menu for status bar button
-let menu = NSMenu()
-menu.autoenablesItems = false
-statusItem.menu = menu
+// Create custom view for status bar button menu
+let customView = NSView(frame: NSRect(x: 0, y: 0, width: 200, height: 300))
+let scrollView = NSScrollView(frame: customView.bounds)
+scrollView.autoresizingMask = [.width, .height]
+customView.addSubview(scrollView)
 
-// Get list of user-installed apps and add them to the menu
+let documentView = NSView(frame: NSRect(x: 0, y: 0, width: scrollView.contentSize.width, height: scrollView.contentSize.height))
+scrollView.documentView = documentView
+
+// Get list of user-installed apps and add them to the custom view
 let fileManager = FileManager.default
 let applicationsDirectoryURLs = fileManager.urls(for: .applicationDirectory, in: .localDomainMask)
+var yPosition = 0
+
 for directoryURL in applicationsDirectoryURLs {
     do {
         let applicationURLs = try fileManager.contentsOfDirectory(atPath: directoryURL.path).filter { !$0.starts(with: ".") }
 
         for applicationName in applicationURLs {
             let appName = applicationName.replacingOccurrences(of: ".app", with: "")
-            let menuItem = NSMenuItem(title: appName, action: #selector(AppDelegate.toggleApp(_:)), keyEquivalent: "")
-            menuItem.target = NSApp.delegate
-            menuItem.state = requiredProcNames.contains(appName) ? .on : .off
-            menu.addItem(menuItem)
+            let checkboxButton = NSButton(frame: NSRect(x: 10, y: yPosition, width: 180, height: 20))
+            checkboxButton.setButtonType(.switch)
+            checkboxButton.title = appName
+            checkboxButton.target = NSApp.delegate
+            checkboxButton.action = #selector(AppDelegate.toggleApp(_:))
+            checkboxButton.state = requiredProcNames.contains(appName) ? .on : .off
+            documentView.addSubview(checkboxButton)
+            yPosition += 20
+
+            documentView.frame = NSRect(x: 0, y: 0, width: Int(scrollView.contentSize.width), height: yPosition)
+
+            scrollView.documentView?.scroll(NSPoint(x: 0, y: yPosition))
         }
 
     } catch {
@@ -113,7 +127,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    @objc func toggleApp(_ sender: NSMenuItem) {
+    @objc func toggleApp(_ sender: NSButton) {
         let appName = sender.title
         if requiredProcNames.contains(appName) {
             requiredProcNames.remove(appName)
@@ -138,6 +152,15 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 let delegate = AppDelegate()
 app.delegate = delegate
+
+// Create menu for status bar button and add custom view to menu
+let menu = NSMenu()
+menu.autoenablesItems = false
+statusItem.menu = menu
+
+let menuItem = NSMenuItem()
+menuItem.view = customView
+menu.addItem(menuItem)
 
 print("Start handling deep clicks in selected apps")
 app.run()
