@@ -1,6 +1,8 @@
-import ApplicationServices
 import Cocoa
 import Foundation
+
+let app = NSApplication.shared
+app.setActivationPolicy(.regular)
 
 let requiredEvent = CGEventType(rawValue: 29)!
 var requiredProcNames: Set<String> = ["Google Chrome"]
@@ -64,5 +66,11 @@ if eventTap == nil {
 let runLoopSource = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, eventTap!, 0)
 CFRunLoopAddSource(CFRunLoopGetCurrent(), runLoopSource, .commonModes)
 CGEvent.tapEnable(tap: eventTap!, enable: true)
+
+// Add button to status bar
+let statusBar = NSStatusBar.system
+let statusItem = statusBar.statusItem(withLength: NSStatusItem.variableLength)
+statusItem.button?.title = "DeepMiddle"
+
 print("Start handling deep clicks in selected apps")
 CFRunLoopRun()
